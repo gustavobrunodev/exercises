@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  nginx:
+    build:
+      dockerfile: Dockerfile
+      context: ./nginx
+    container_name: nginx
+    depends_on:
+      - api
+      - db
+    restart: always
+    ports:
+      - "8080:80"  
+    networks:
+      - node-network  
+  api:
+    build:
+      dockerfile: Dockerfile
+      context: ./server
+    container_name: api
+    volumes:
+      - ./server:/app 
+    command: bash -c "npm install && npm run start"
+    tty: true
+    depends_on:
+      - db
+    networks:
+      - node-network
+  db:
+    image: mysql:5.7
+    command: --innodb-use-native-aio=0
+    container_name: db
+    restart: always
+    tty: true
+    volumes:
+      - "./setup.sql:/docker-entrypoint-initdb.d/setup.sql"
+    environment:
+      - MYSQL_DATABASE=nodedb
+      - MYSQL_ROOT_PASSWORD=password
+    networks:
+      - node-network
+  
+networks:
+  node-network:
+    driver: bridge
+  
